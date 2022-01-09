@@ -39,6 +39,9 @@ else ifeq ("riscv64", $(MK_ARCH))
 endif
 undefine MK_ARCH
 
+# 添加测试
+$(info "HOST_ARCH is $(HOST_ARCH)")
+
 # Avoid funny character set dependencies
 unexport LC_ALL
 LC_COLLATE=C
@@ -120,6 +123,8 @@ endif
 
 export quiet Q KBUILD_VERBOSE
 
+# 添加测试
+$(info "quiet Q KBUILD_VERBOSE")
 # kbuild supports saving output files in a separate directory.
 # To locate output files in a separate directory two syntaxes are supported.
 # In both cases the working directory must be the root of the kernel src.
@@ -222,9 +227,9 @@ endif
 # but instead _all depend on modules
 PHONY += all
 ifeq ($(KBUILD_EXTMOD),)
-_all: all
+_all: all;@echo "[End] _all: all ---> $@"
 else
-_all: modules
+_all: modules;@echo "[End] _all: modules ---> $@"
 endif
 
 ifeq ($(KBUILD_SRC),)
@@ -327,14 +332,14 @@ os_x_before	= $(shell if [ $(DARWIN_MAJOR_VERSION) -le $(1) -a \
 	$(DARWIN_MINOR_VERSION) -le $(2) ] ; then echo "$(3)"; else echo "$(4)"; fi ;)
 
 os_x_after = $(shell if [ $(DARWIN_MAJOR_VERSION) -ge $(1) -a \
-	$(DARWIN_MINOR_VERSION) -ge $(2) ] ; then echo "$(3)"; else echo "$(4)"; fi ;)	
+	$(DARWIN_MINOR_VERSION) -ge $(2) ] ; then echo "$(3)"; else echo "$(4)"; fi ;)
 
 # Snow Leopards build environment has no longer restrictions as described above
 HOSTCC       = $(call os_x_before, 10, 5, "cc", "gcc")
 KBUILD_HOSTCFLAGS  += $(call os_x_before, 10, 4, "-traditional-cpp")
 KBUILD_HOSTLDFLAGS += $(call os_x_before, 10, 5, "-multiply_defined suppress")
 
-# macOS Mojave (10.14.X) 
+# macOS Mojave (10.14.X)
 # Undefined symbols for architecture x86_64: "_PyArg_ParseTuple"
 KBUILD_HOSTLDFLAGS += $(call os_x_after, 10, 14, "-lpython -dynamclib", "")
 endif
@@ -487,6 +492,7 @@ PHONY += scripts_basic
 scripts_basic:
 	$(Q)$(MAKE) $(build)=scripts/basic
 	$(Q)rm -f .tmp_quiet_recordmcount
+	@echo "[End] scripts_basic ---> $@"
 
 # To avoid any implicit rule to kick in, define an empty command.
 scripts/basic/%: scripts_basic ;
@@ -500,6 +506,7 @@ ifneq ($(KBUILD_SRC),)
 	$(Q)ln -fsn $(srctree) source
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/mkmakefile $(srctree)
 endif
+	@echo "[End] outputmakefile ---> $@"
 
 # To make sure we do not include .config for any of the *config targets
 # catch them early, and hand them over to scripts/kconfig/Makefile
@@ -538,6 +545,8 @@ ifeq ($(KBUILD_EXTMOD),)
 endif
 
 ifeq ($(mixed-targets),1)
+# 添加测试
+$(info "ifeq (mixed-targets,1)")
 # ===========================================================================
 # We're called with mixed targets (*config and build targets).
 # Handle them one by one.
@@ -555,6 +564,8 @@ __build_one_by_one:
 
 else
 ifeq ($(config-targets),1)
+# 添加测试
+$(info "ifeq (config-targets,1)")
 # ===========================================================================
 # *config targets only - make sure prerequisites are updated, and descend
 # in scripts/kconfig to make the *config target
@@ -564,11 +575,15 @@ export KBUILD_DEFCONFIG KBUILD_KCONFIG
 
 config: scripts_basic outputmakefile FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
+	@echo "[End] config: scripts_basic outputmakefile FORCE ---> $@"
 
 %config: scripts_basic outputmakefile FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
+	@echo "[End] %config: scripts_basic outputmakefile FORCE ---> $@"
 
 else
+# 添加测试
+$(info "Build targets only")
 # ===========================================================================
 # Build targets only - this includes vmlinux, arch specific targets, clean
 # targets and others. In general all targets except *config targets.
@@ -580,7 +595,10 @@ PHONY += scripts
 scripts: scripts_basic scripts_dtc include/config/auto.conf
 	$(Q)$(MAKE) $(build)=$(@)
 
+
 ifeq ($(dot-config),1)
+# 添加测试
+$(info "ifeq (dot-config,1)")
 # Read in config
 -include include/config/auto.conf
 
@@ -606,6 +624,7 @@ include/config/%.conf: $(KCONFIG_CONFIG) include/config/auto.conf.cmd
 	@# than include/config.h.
 	@# Otherwise, 'make silentoldconfig' would be invoked twice.
 	$(Q)touch include/config/auto.conf
+	@echo "[End] include/config/xx.conf  ---> $@"
 
 u-boot.cfg spl/u-boot.cfg tpl/u-boot.cfg:
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.autoconf $(@)
@@ -663,9 +682,14 @@ ifndef LDSCRIPT
 endif
 
 else
+# 添加测试
+$(info "ifeq (dot-config,0)")
 # Dummy target needed, because used as prerequisite
 include/config/auto.conf: ;
 endif # $(dot-config)
+
+# 添加测试
+$(info "endif (dot-config,1)")
 
 #
 # Xtensa linker script cannot be preprocessed with -ansi because of
@@ -800,6 +824,9 @@ c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 #########################################################################
 # U-Boot objects....order is important (i.e. start must be first)
 
+# 添加测试
+$(info "libs-y")
+
 HAVE_VENDOR_COMMON_LIB = $(if $(wildcard $(srctree)/board/$(VENDOR)/common/Makefile),y,n)
 
 libs-$(CONFIG_API) += api/
@@ -927,6 +954,9 @@ else
 quiet_cmd_static_rela =
 cmd_static_rela =
 endif
+
+# 添加测试
+$(info "INPUTS-")
 
 # Always append INPUTS so that arch config.mk's can add custom ones
 INPUTS-y += u-boot.srec u-boot.bin u-boot.sym System.map binary_size_check
@@ -1088,11 +1118,13 @@ endef
 
 PHONY += inputs
 inputs: $(INPUTS-y)
+	@echo "[End] inputs: INPUTS-y -- $(INPUTS-y) ---> $@"
 
 all: .binman_stamp inputs
 ifeq ($(CONFIG_BINMAN),y)
 	$(call if_changed,binman)
 endif
+	@echo "[End] all: .binman_stamp inputs ---> $@"
 
 # Timestamp file to make sure that binman always runs
 .binman_stamp: FORCE
@@ -1132,6 +1164,7 @@ endif
 	@# know about unless they are in Kconfig. All the existing CONFIG
 	@# options are whitelisted, so new ones should not be added.
 	$(call cmd,cfgcheck,u-boot.cfg)
+	@echo "[End] .binman_stamp: FORCE"
 
 PHONY += dtbs
 dtbs: dts/dt.dtb
@@ -1223,6 +1256,7 @@ OBJCOPYFLAGS_u-boot.srec := -O srec
 
 u-boot.hex u-boot.srec: u-boot FORCE
 	$(call if_changed,objcopy)
+	@echo "[End] u-boot.srec: u-boot FORCE ---> $@"
 
 OBJCOPYFLAGS_u-boot-elf.srec := $(OBJCOPYFLAGS_u-boot.srec)
 
@@ -1299,6 +1333,9 @@ u-boot.ldr:	u-boot
 		$(CREATE_LDR_ENV)
 		$(LDR) -T $(CONFIG_CPU) -c $@ $< $(LDR_FLAGS)
 		$(BOARD_SIZE_CHECK)
+
+# 添加测试
+$(info "binman-binman-binman-binman")
 
 # binman
 # ---------------------------------------------------------------------------
@@ -1796,6 +1833,7 @@ endif
 ifeq ($(CONFIG_RISCV),y)
 	@tools/prelink-riscv $@ 0
 endif
+	@echo "[End] u-boot: [$(u-boot-init)] [$(u-boot-main)] [$(u-boot-keep-syms-lto)] u-boot.lds FORCE ---> $@"
 
 quiet_cmd_sym ?= SYM     $@
       cmd_sym ?= $(OBJDUMP) -t $< > $@
@@ -1830,6 +1868,7 @@ endef
 # Store (new) UBOOTRELEASE string in include/config/uboot.release
 include/config/uboot.release: include/config/auto.conf FORCE
 	$(call filechk,uboot.release)
+	@echo "[End] include/config/uboot.release: include/config/auto.conf FORCE ---> $@"
 
 
 # Things we need to do before we recursively start building the kernel
@@ -1853,9 +1892,10 @@ ifneq ($(KBUILD_SRC),)
 		/bin/false; \
 	fi;
 endif
+	@echo "[End] prepare3: include/config/uboot.release ---> $@"
 
 # prepare2 creates a makefile if using a separate output directory
-prepare2: prepare3 outputmakefile cfg
+prepare2: prepare3 outputmakefile cfg;@echo "[End] prepare2: prepare3 outputmakefile cfg ---> $@"
 
 prepare1: prepare2 $(version_h) $(timestamp_h) $(dt_h) \
                    include/config/auto.conf
@@ -1863,6 +1903,7 @@ ifeq ($(wildcard $(LDSCRIPT)),)
 	@echo >&2 "  Could not find linker script."
 	@/bin/false
 endif
+	@echo "[End] prepare1: prepare2 [$(version_h)] [$(timestamp_h)] [$(dt_h)] ---> $@"
 
 ifeq ($(CONFIG_USE_DEFAULT_ENV_FILE),y)
 prepare1: $(defaultenv_h)
@@ -1870,13 +1911,14 @@ prepare1: $(defaultenv_h)
 envtools: $(defaultenv_h)
 endif
 
-archprepare: prepare1 scripts_basic
+archprepare: prepare1 scripts_basic;@echo "[End] archprepare: prepare1 scripts_basic ---> $@"
 
 prepare0: archprepare FORCE
 	$(Q)$(MAKE) $(build)=.
+	@echo "[End] prepare0: archprepare FORCE ---> $@"
 
 # All the preparing..
-prepare: prepare0
+prepare: prepare0;@echo "[End] prepare: prepare0 ---> $@"
 
 # Generate some files
 # ---------------------------------------------------------------------------
@@ -1968,7 +2010,7 @@ dtbs_install:
 	$(Q)$(MAKE) $(dtbinst)=$(dtstree)
 
 ifdef CONFIG_OF_EARLY_FLATTREE
-all: dtbs
+all: dtbs;@echo "all: dtbs"
 endif
 
 endif
@@ -1984,6 +2026,7 @@ cmd_cpp_lds = $(CPP) -Wp,-MD,$(depfile) $(cpp_flags) $(LDPPFLAGS) \
 
 u-boot.lds: $(LDSCRIPT) prepare FORCE
 	$(call if_changed_dep,cpp_lds)
+	@echo "[End] u-boot.lds: $(LDSCRIPT) prepare FORCE ---> $@"
 
 spl/u-boot-spl.bin: spl/u-boot-spl
 	@:
@@ -2057,6 +2100,7 @@ checkarmreloc: u-boot
 		echo "$< contains unexpected relocations: $$RELOC"; \
 		false; \
 	fi
+	@echo "[End] checkarmreloc: u-boot ---> $@"
 
 tools/version.h: include/version.h
 	$(Q)mkdir -p $(dir $@)
@@ -2081,6 +2125,8 @@ CHANGELOG:
 	unexpand -a | sed -e 's/\s\s*$$//' > $@
 
 #########################################################################
+# 添加测试
+$(info "Cleaning-Cleaning-Cleaning-Cleaning")
 
 ###
 # Cleaning is done on three levels.
@@ -2136,6 +2182,7 @@ clean: $(clean-dirs)
 		-o -name 'dsdt.aml' -o -name 'dsdt.asl.tmp' -o -name 'dsdt.c' \
 		-o -name '*.efi' -o -name '*.gcno' -o -name '*.so' \) \
 		-type f -print | xargs rm -f
+	@echo "[End] clean: (clean-dirs) : $(clean-dirs) ---> $@"
 
 # mrproper - Delete all generated files, including .config
 #
@@ -2146,11 +2193,13 @@ mrproper-dirs      := $(addprefix _mrproper_,scripts)
 PHONY += $(mrproper-dirs) mrproper archmrproper
 $(mrproper-dirs):
 	$(Q)$(MAKE) $(clean)=$(patsubst _mrproper_%,%,$@)
+	@echo "[End] (mrproper-dirs) : [$(mrproper-dirs)] ---> $@"
 
 mrproper: clean $(mrproper-dirs)
 	$(call cmd,rmdirs)
 	$(call cmd,rmfiles)
 	@rm -f arch/*/include/asm/arch
+	@echo "[End]  mrproper: clean [$(mrproper-dirs)] ---> $@"
 
 # distclean
 #
@@ -2164,6 +2213,7 @@ distclean: mrproper
 		-o -name '*.pyc' \) \
 		-type f -print | xargs rm -f
 	@rm -f boards.cfg CHANGELOG
+	@echo "[End] distclean: mrproper ---> $@"
 
 backup:
 	F=`basename $(srctree)` ; cd .. ; \
@@ -2250,6 +2300,9 @@ ubootrelease:
 
 ubootversion:
 	@echo $(UBOOTVERSION)
+
+# 添加测试
+$(info "Single targets-Single targets-Single targets-Single targets")
 
 # Single targets
 # ---------------------------------------------------------------------------
@@ -2343,3 +2396,6 @@ FORCE:
 # Declare the contents of the PHONY variable as phony.  We keep that
 # information in a variable so we can use it in if_changed and friends.
 .PHONY: $(PHONY)
+
+# 添加测试
+$(info "Makefile end!")
