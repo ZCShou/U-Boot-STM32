@@ -63,120 +63,111 @@
  * can also be done early before entering board_init_f() on plaforms that
  * can afford it due to sufficient memory being available early.
  */
-
 .macro CLEAR_BSS
 	ldr	r0, =__bss_start	/* this is auto-relocated! */
 
-#ifdef CONFIG_USE_ARCH_MEMSET
-	ldr	r3, =__bss_end		/* this is auto-relocated! */
-	mov	r1, #0x00000000		/* prepare zero to clear BSS */
+	#ifdef CONFIG_USE_ARCH_MEMSET
+		ldr	r3, =__bss_end		/* this is auto-relocated! */
+		mov	r1, #0x00000000		/* prepare zero to clear BSS */
 
-	subs	r2, r3, r0		/* r2 = memset len */
-	bl	memset
-#else
-	ldr	r1, =__bss_end		/* this is auto-relocated! */
-	mov	r2, #0x00000000		/* prepare zero to clear BSS */
+		subs	r2, r3, r0		/* r2 = memset len */
+		bl	memset
+	#else
+		ldr	r1, =__bss_end		/* this is auto-relocated! */
+		mov	r2, #0x00000000		/* prepare zero to clear BSS */
 
-clbss_l:cmp	r0, r1			/* while not at end of BSS */
-	strlo	r2, [r0]		/* clear 32-bit BSS word */
-	addlo	r0, r0, #4		/* move to next */
-	blo	clbss_l
-#endif
+	clbss_l:cmp	r0, r1			/* while not at end of BSS */
+		strlo	r2, [r0]		/* clear 32-bit BSS word */
+		addlo	r0, r0, #4		/* move to next */
+		blo	clbss_l
+	#endif
 .endm
 
 /*
  * entry point of crt0 sequence
  */
-
 ENTRY(_main)
-
-/*
- * Set up initial C runtime environment and call board_init_f(0).
- */
-
-#if defined(CONFIG_TPL_BUILD) && defined(CONFIG_TPL_NEEDS_SEPARATE_STACK)
-	ldr	r0, =(CONFIG_TPL_STACK)                                         /* r0 = CONFIG_TPL_STACK =  */
-#elif defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_STACK)
-	ldr	r0, =(CONFIG_SPL_STACK)                                         /* r0 = CONFIG_SPL_STACK = 0x20050000 */
-#else
-	ldr	r0, =(CONFIG_SYS_INIT_SP_ADDR)                                  /* r0 = CONFIG_SYS_INIT_SP_ADDR = 0x20050000 */
-#endif
-	bic	r0, r0, #7	/* 8-byte alignment for ABI compliance */           /* r0 = r0 & ~(0x7) = 0x20050000 & 0xFFFFFFF8 = 0x20050000 */
-	mov	sp, r0                                                          /* sp = r0 = 0x20050000 */
-	bl	board_init_f_alloc_reserve                                      /* 调用 board_init_f_alloc_reserve(0x20050000)，该函数有一个入参，ARM 默认是 r0 作为第一个参数。该函数分配 GD 空间。 */
-	mov	sp, r0                                                          /* sp = r0 = board_init_f_alloc_reserve(0x20050000) = 0x2004f120。 ARM 默认用 r0 存放函数的返回值 。这个地址正好是 GD 的地址。 */
+	/*
+	* Set up initial C runtime environment and call board_init_f(0).
+	*/
+	#if defined(CONFIG_TPL_BUILD) && defined(CONFIG_TPL_NEEDS_SEPARATE_STACK)
+		ldr	r0, =(CONFIG_TPL_STACK)										/* r0 = CONFIG_TPL_STACK =  */
+	#elif defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_STACK)
+		ldr	r0, =(CONFIG_SPL_STACK)										/* r0 = CONFIG_SPL_STACK = 0x20050000 */
+	#else
+		ldr	r0, =(CONFIG_SYS_INIT_SP_ADDR)								/* r0 = CONFIG_SYS_INIT_SP_ADDR = 0x20050000 */
+	#endif
+	bic	r0, r0, #7	/* 8-byte alignment for ABI compliance */			/* r0 = r0 & ~(0x7) = 0x20050000 & 0xFFFFFFF8 = 0x20050000 */
+	mov	sp, r0															/* sp = r0 = 0x20050000 */
+	bl	board_init_f_alloc_reserve										/* 调用 board_init_f_alloc_reserve(0x20050000)，该函数有一个入参，ARM 默认是 r0 作为第一个参数。该函数分配 GD 空间。 */
+	mov	sp, r0															/* sp = r0 = board_init_f_alloc_reserve(0x20050000) = 0x2004f120。 ARM 默认用 r0 存放函数的返回值 。这个地址正好是 GD 的地址。 */
 	/* set up gd here, outside any C code */
-	mov	r9, r0                                                          /* r9 = r0 = 0x2004f120。这里使用 r9 保存了 GD 的地址 */
-	bl	board_init_f_init_reserve                                       /* 调用 board_init_f_init_reserve(0x2004f120)。ARM 默认 r0 传递第一个参数。该函数初始化（实际是清零） GD 空间 */
+	mov	r9, r0															/* r9 = r0 = 0x2004f120。这里使用 r9 保存了 GD 的地址 */
+	bl	board_init_f_init_reserve										/* 调用 board_init_f_init_reserve(0x2004f120)。ARM 默认 r0 传递第一个参数。该函数初始化（实际是清零） GD 空间 */
 
-#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_EARLY_BSS)
-	CLEAR_BSS
-#endif
+	#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_EARLY_BSS)
+		CLEAR_BSS
+	#endif
 
-	mov	r0, #0                                                          /* r0 = 0 */
-	bl	board_init_f                                                    /* 调用 board_init_f(0)。ARM 默认 r0 传递第一个参数。该接口没有返回值。其中会填写 GD 各成员变量的的值  */
+	mov	r0, #0															/* r0 = 0 */
+	bl	board_init_f													/* 调用 board_init_f(0)。ARM 默认 r0 传递第一个参数。该接口没有返回值。其中会填写 GD 各成员变量的的值  */
 
-#if ! defined(CONFIG_SPL_BUILD)
+	#if !defined(CONFIG_SPL_BUILD)
+		/*
+		* Set up intermediate environment (new sp and gd) and call
+		* relocate_code(addr_moni). Trick here is that we'll return
+		* 'here' but relocated.
+		*/
+		ldr	r0, [r9, #GD_START_ADDR_SP]	/* sp = gd->start_addr_sp */	/* r0 = *(r9 + GD_START_ADDR_SP) = *(0x2004f120 + ) = 0xc0da4fb0 */
+		bic	r0, r0, #7	/* 8-byte alignment for ABI compliance */		/* r0 = r0 & ~(0x7) = 0xc0da4fb0 & 0xFFFFFFF8 = 0xc0da4fb0 */
+		mov	sp, r0														/* sp = r0 = 0xc0da4fb0 */
+		ldr	r9, [r9, #GD_NEW_GD]		/* r9 <- gd->new_gd */			/* r9 = *(r9 + GD_NEW_GD) = *(0x2004f120 + ) = 0xc0daaed0。r9 存放了重定位之后的 GD 的地址 */
 
-/*
- * Set up intermediate environment (new sp and gd) and call
- * relocate_code(addr_moni). Trick here is that we'll return
- * 'here' but relocated.
- */
+		adr	lr, here													/* lr = here标号的位置 = 0x8010774 */
+		ldr	r0, [r9, #GD_RELOC_OFF]		/* r0 = gd->reloc_off */		/* r0 = *(r9 + GD_RELOC_OFF) = 0 */
+		add	lr, lr, r0													/* lr = lr + r0 = 0x8010774 + 0 = 0x8010774 */
+		#if defined(CONFIG_CPU_V7M)
+			orr	lr, #1				/* As required by Thumb-only */		/* lr = lr ^ 1 = 0x8010774 ^ 1 = 0x8010775 */
+		#endif
+			ldr	r0, [r9, #GD_RELOCADDR]		/* r0 = gd->relocaddr */	/* r0 = *(r9 + GD_RELOCADDR) = 0 */
+			b	relocate_code											/* 调用 relocate_code(0)。ARM 默认 r0 传递第一个参数。 */
+		here:
+		/*
+		* now relocate vectors
+		*/
+		bl	relocate_vectors											/* 调用 relocate_vectors() */
+		/* Set up final (full) environment */
+		bl	c_runtime_cpu_setup	/* we still call old routine here */	/* 调用 c_runtime_cpu_setup() */
+	#endif
+	#if !defined(CONFIG_SPL_BUILD) || CONFIG_IS_ENABLED(FRAMEWORK)
+		#if !defined(CONFIG_SPL_BUILD) || !defined(CONFIG_SPL_EARLY_BSS)
+			CLEAR_BSS
+		#endif
 
-	ldr	r0, [r9, #GD_START_ADDR_SP]	/* sp = gd->start_addr_sp */        /* r0 = *(r9 + GD_START_ADDR_SP) = *(0x2004f120 + ) = 0xc0da4fb0 */
-	bic	r0, r0, #7	/* 8-byte alignment for ABI compliance */           /* r0 = r0 & ~(0x7) = 0xc0da4fb0 & 0xFFFFFFF8 = 0xc0da4fb0 */
-	mov	sp, r0                                                          /* sp = r0 = 0xc0da4fb0 */
-	ldr	r9, [r9, #GD_NEW_GD]		/* r9 <- gd->new_gd */              /* r9 = *(r9 + GD_NEW_GD) = *(0x2004f120 + ) = 0xc0daaed0 */
+		# ifdef CONFIG_SPL_BUILD
+			/* Use a DRAM stack for the rest of SPL, if requested */
+			bl	spl_relocate_stack_gd
+			cmp	r0, #0
+			movne	sp, r0
+			movne	r9, r0
+		# endif
 
-	adr	lr, here                                                        /* lr = here标号的位置 = 0x8010774 */
-	ldr	r0, [r9, #GD_RELOC_OFF]		/* r0 = gd->reloc_off */            /* r0 = *(r9 + GD_RELOC_OFF) = 0 */
-	add	lr, lr, r0                                                      /* lr = lr + r0 = 0x8010774 + 0 = 0x8010774 */
-#if defined(CONFIG_CPU_V7M)
-	orr	lr, #1				/* As required by Thumb-only */             /* lr = lr ^ 1 = 0x8010774 ^ 1 = 0x8010775 */
-#endif
-	ldr	r0, [r9, #GD_RELOCADDR]		/* r0 = gd->relocaddr */            /* r0 = *(r9 + GD_RELOCADDR) = 0 */
-	b	relocate_code                                                   /* 调用 relocate_code(0)。ARM 默认 r0 传递第一个参数。 */
-here:
-/*
- * now relocate vectors
- */
+		#if ! defined(CONFIG_SPL_BUILD)
+			bl coloured_LED_init
+			bl red_led_on
+		#endif
 
-	bl	relocate_vectors                                                /* 调用 relocate_vectors() */
+		/* call board_init_r(gd_t *id, ulong dest_addr) */
+		mov     r0, r9                  /* gd_t */
+		ldr	r1, [r9, #GD_RELOCADDR]	/* dest_addr */
 
-/* Set up final (full) environment */
-
-	bl	c_runtime_cpu_setup	/* we still call old routine here */        /* 调用 c_runtime_cpu_setup() */
-#endif
-#if !defined(CONFIG_SPL_BUILD) || CONFIG_IS_ENABLED(FRAMEWORK)
-
-#if !defined(CONFIG_SPL_BUILD) || !defined(CONFIG_SPL_EARLY_BSS)
-	CLEAR_BSS
-#endif
-
-# ifdef CONFIG_SPL_BUILD
-	/* Use a DRAM stack for the rest of SPL, if requested */
-	bl	spl_relocate_stack_gd
-	cmp	r0, #0
-	movne	sp, r0
-	movne	r9, r0
-# endif
-
-#if ! defined(CONFIG_SPL_BUILD)
-	bl coloured_LED_init
-	bl red_led_on
-#endif
-	/* call board_init_r(gd_t *id, ulong dest_addr) */
-	mov     r0, r9                  /* gd_t */
-	ldr	r1, [r9, #GD_RELOCADDR]	/* dest_addr */
-	/* call board_init_r */
-#if CONFIG_IS_ENABLED(SYS_THUMB_BUILD)
-	ldr	lr, =board_init_r	/* this is auto-relocated! */
-	bx	lr
-#else
-	ldr	pc, =board_init_r	/* this is auto-relocated! */
-#endif
-	/* we should not return here. */
-#endif
-
+		/* call board_init_r */
+		#if CONFIG_IS_ENABLED(SYS_THUMB_BUILD)
+			ldr	lr, =board_init_r	/* this is auto-relocated! */
+			bx	lr
+		#else
+			ldr	pc, =board_init_r	/* this is auto-relocated! */
+		#endif
+		/* we should not return here. */
+	#endif
 ENDPROC(_main)
