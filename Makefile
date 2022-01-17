@@ -2167,10 +2167,13 @@ clean-dirs      := $(addprefix _clean_, $(clean-dirs))
 PHONY += $(clean-dirs) clean archclean
 $(clean-dirs):
 	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$@)
+	@echo "[End] (clean-dirs) : $(clean-dirs) ---> $@"
 
 clean: $(clean-dirs)
 	$(call cmd,rmdirs)
+	@echo "[End] clean: (call cmd,rmdirs): [$(cmd), $(rm-dirs) ---> $@"
 	$(call cmd,rmfiles)
+	@echo "[End] clean: (call cmd,rmfiles): [$(cmd), $(rm-files)] ---> $@"
 	@find $(if $(KBUILD_EXTMOD), $(KBUILD_EXTMOD), .) $(RCS_FIND_IGNORE) \
 		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
 		-o -name '*.ko.*' -o -name '*.su' -o -name '*.pyc' \
@@ -2197,7 +2200,9 @@ $(mrproper-dirs):
 
 mrproper: clean $(mrproper-dirs)
 	$(call cmd,rmdirs)
+	@echo "[End] mrproper: (call cmd,rmdirs): [$(cmd), $(rm-dirs)] ---> $@"
 	$(call cmd,rmfiles)
+	@echo "[End] mrproper: (call cmd,rmfiles): [$(cmd), $(rm-files)] ---> $@"
 	@rm -f arch/*/include/asm/arch
 	@echo "[End]  mrproper: clean [$(mrproper-dirs)] ---> $@"
 
