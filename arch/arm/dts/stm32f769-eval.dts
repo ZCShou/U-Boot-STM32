@@ -5,13 +5,14 @@
  */
 
 /dts-v1/;
-#include "stm32f746.dtsi"
+#include "stm32f769.dtsi"
 #include "stm32f769-pinctrl.dtsi"
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 
 / {
 	model = "STMicroelectronics STM32F769-EVAL board";
+	/* 字符串列表：通常有两个，第一个是板子信息，第二个是板子兼容的配置*/
 	compatible = "st,stm32f769-eval", "st,stm32f769";
 
 	chosen {

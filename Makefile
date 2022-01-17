@@ -1118,7 +1118,7 @@ endef
 
 PHONY += inputs
 inputs: $(INPUTS-y)
-	@echo "[End] inputs: INPUTS-y -- $(INPUTS-y) ---> $@"
+	@echo "[End] inputs: INPUTS-y -- [$(INPUTS-y)] ---> $@"
 
 all: .binman_stamp inputs
 ifeq ($(CONFIG_BINMAN),y)
@@ -1169,8 +1169,10 @@ endif
 PHONY += dtbs
 dtbs: dts/dt.dtb
 	@:
+	@echo "[End] dtbs: dts/dt.dtb ---> $@"
 dts/dt.dtb: u-boot
 	$(Q)$(MAKE) $(build)=dts dtbs
+	@echo "[End] dts/dt.dtb: u-boot ---> $@"
 
 quiet_cmd_copy = COPY    $@
       cmd_copy = cp $< $@
@@ -1833,7 +1835,7 @@ endif
 ifeq ($(CONFIG_RISCV),y)
 	@tools/prelink-riscv $@ 0
 endif
-	@echo "[End] u-boot: [$(u-boot-init)] [$(u-boot-main)] [$(u-boot-keep-syms-lto)] u-boot.lds FORCE ---> $@"
+	@echo "[End] u-boot: u-boot-init u-boot-main u-boot-keep-syms-lto u-boot.lds FORCE: [$(u-boot-init)] [$(u-boot-main)] [$(u-boot-keep-syms-lto)]---> $@"
 
 quiet_cmd_sym ?= SYM     $@
       cmd_sym ?= $(OBJDUMP) -t $< > $@
@@ -2026,7 +2028,7 @@ cmd_cpp_lds = $(CPP) -Wp,-MD,$(depfile) $(cpp_flags) $(LDPPFLAGS) \
 
 u-boot.lds: $(LDSCRIPT) prepare FORCE
 	$(call if_changed_dep,cpp_lds)
-	@echo "[End] u-boot.lds: $(LDSCRIPT) prepare FORCE ---> $@"
+	@echo "[End] u-boot.lds: LDSCRIPT prepare FORCE: [$(LDSCRIPT)] ---> $@"
 
 spl/u-boot-spl.bin: spl/u-boot-spl
 	@:
@@ -2167,13 +2169,13 @@ clean-dirs      := $(addprefix _clean_, $(clean-dirs))
 PHONY += $(clean-dirs) clean archclean
 $(clean-dirs):
 	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$@)
-	@echo "[End] (clean-dirs) : $(clean-dirs) ---> $@"
+	@echo "[End] (clean-dirs) : [$(clean-dirs)] ---> $@"
 
 clean: $(clean-dirs)
 	$(call cmd,rmdirs)
-	@echo "[End] clean: (call cmd,rmdirs): [$(cmd), $(rm-dirs) ---> $@"
+	@echo "[End] clean: (call cmd,rmdirs): [$(cmd)], [$(rm-dirs)] ---> $@"
 	$(call cmd,rmfiles)
-	@echo "[End] clean: (call cmd,rmfiles): [$(cmd), $(rm-files)] ---> $@"
+	@echo "[End] clean: (call cmd,rmfiles): [$(cmd)], [$(rm-files)] ---> $@"
 	@find $(if $(KBUILD_EXTMOD), $(KBUILD_EXTMOD), .) $(RCS_FIND_IGNORE) \
 		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
 		-o -name '*.ko.*' -o -name '*.su' -o -name '*.pyc' \
@@ -2185,7 +2187,7 @@ clean: $(clean-dirs)
 		-o -name 'dsdt.aml' -o -name 'dsdt.asl.tmp' -o -name 'dsdt.c' \
 		-o -name '*.efi' -o -name '*.gcno' -o -name '*.so' \) \
 		-type f -print | xargs rm -f
-	@echo "[End] clean: (clean-dirs) : $(clean-dirs) ---> $@"
+	@echo "[End] clean: (clean-dirs) : [$(clean-dirs)] ---> $@"
 
 # mrproper - Delete all generated files, including .config
 #
